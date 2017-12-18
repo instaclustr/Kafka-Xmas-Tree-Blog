@@ -16,8 +16,8 @@ public class XmasTree {
     	 StarProducer producerThread = new StarProducer(KafkaProperties.TOPIC, isAsync);
     	 producerThread.start();
      
-     // Start state display consumer. Note that the TOPIC arg is ignored as it subscribes to 2 topics which are hardcoded.
-     StateDisplayConsumer displayTree = new StateDisplayConsumer(KafkaProperties.TOPIC);
+     // Start state display consumer. New version with both topics, OFF and ON, passed via args.
+     StateDisplayConsumer displayTree = new StateDisplayConsumer(KafkaProperties.TOPICOFF, KafkaProperties.TOPICON);
      displayTree.start();
      
      // start count consumer, subscribes to TOPIC2

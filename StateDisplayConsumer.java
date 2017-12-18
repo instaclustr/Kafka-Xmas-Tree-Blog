@@ -6,25 +6,28 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
 /*
  * Consumer for the tree display, receives events from ON and OFF topics and displays ASCII tree.
+ * Modified version, single consumer subscribes to 2 topics and uses records method to return events for each topic in turn.
  * Consumer docs: https://kafka.apache.org/0100/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html
  * Consumer config docs: http://kafka.apache.org/documentation.html#consumerconfigs
  */
 
 public class StateDisplayConsumer extends ShutdownableThread {
 	private final KafkaConsumer<Integer, Integer> consumer;
-    private final String topic; // note unused as this consumers subscribes to 2 topics
-    private final Boolean debug = KafkaProperties.DEBUG;
+    private final Boolean debug = KafkaProperties.DEBUG; 
+    private final String topic1;
+    private final String topic2;
     // all lights off by default (false)
     private final int maxRows = KafkaProperties.TREE_ROWS;
     private final int maxCols = maxRows;
     private final boolean[][] tree = new boolean[maxRows][maxCols];	
 
-    public StateDisplayConsumer(String topic) {
+    public StateDisplayConsumer(String topic1, String topic2) {
         super("XmasTreeStateDisplayConsumer", false);
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaProperties.KAFKA_SERVER_URL + ":" + KafkaProperties.KAFKA_SERVER_PORT);
@@ -36,7 +39,9 @@ public class StateDisplayConsumer extends ShutdownableThread {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.IntegerDeserializer");
 
         consumer = new KafkaConsumer<>(props);
-        this.topic = topic;
+        this.topic1 = topic1;
+        this.topic2 = topic2;
+        consumer.subscribe(Arrays.asList(topic1, topic2));
     }
 
     @Override
@@ -45,23 +50,31 @@ public class StateDisplayConsumer extends ShutdownableThread {
 
     		// Process events in OFF Topic first so if a light changes from OFF to ON instantaneously it will stay on.
         long pollInterval = 1000;
-        consumer.subscribe(Collections.singletonList(KafkaProperties.TOPICOFF));
-        ConsumerRecords<Integer, Integer> records = consumer.poll(pollInterval);      
-        for (ConsumerRecord<Integer, Integer> record : records)
+        
+        // get records for all topics
+        ConsumerRecords<Integer, Integer> recordsAll = consumer.poll(pollInterval);   
+        
+        // get records for OFF topic only
+        //ConsumerRecords<Integer, Integer> recordsOFF = (ConsumerRecords<Integer, Integer>) recordsAll.records(KafkaProperties.TOPICOFF);
+        
+        Iterable<ConsumerRecord<Integer, Integer>> recordsOFF = recordsAll.records(topic1);
+        
+        for (ConsumerRecord<Integer, Integer> record : recordsOFF)
         {
-        	  	if (debug) System.out.println("Display Consumer OFF records = " + records.count());
+        	  	//if (debug) System.out.println("Display Consumer OFF records = " + recordsOFF.count());
         	  	if (debug) System.out.println("Display Consumer, OFF Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset());        	  	
         	    // paranoid check in case we had a bigger tree in a previous run and some messages are still hanging around unprocessed.
         	  	if (record.key() < maxRows && record.value() < maxCols)
             		tree[record.key()][record.value()] = false;    
         }
         
-        	// Now process ON topic messages
-        consumer.subscribe(Collections.singletonList(KafkaProperties.TOPICON));
-        	ConsumerRecords<Integer, Integer> records2 = consumer.poll(pollInterval);  
-        	for (ConsumerRecord<Integer, Integer> record : records2)
+        // Now process ON topic messages
+        Iterable<ConsumerRecord<Integer, Integer>> recordsON = recordsAll.records(topic2);
+        //consumer.subscribe(Collections.singletonList(KafkaProperties.TOPICON));
+        //	ConsumerRecords<Integer, Integer> records2 = consumer.poll(pollInterval);  
+        	for (ConsumerRecord<Integer, Integer> record : recordsON)
         	{
-        		if (debug) System.out.println("Display Consumer ON records = " + records.count());
+        		//if (debug) System.out.println("Display Consumer ON records = " + recordsON.count());
          	if (debug) System.out.println("Display Consumer, ON Received message: (" + record.key() + ", " + record.value() + ") at offset " + record.offset());         	  	
          	// paranoid check in case we had a bigger tree in a previous run and some messages are still hanging around unprocessed.
          	if (record.key() < maxRows && record.value() < maxCols)

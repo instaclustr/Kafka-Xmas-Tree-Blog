@@ -1,2 +1,2 @@
-# Kafka Xmas Tree lights Simulator code for Instaclustr Xmas blog
-Kafka Xmas Tree Lights simulator for Instaclustr Xmas blog
+# Kafka Christmas Tree Lights Simulator: Instaclusr smashes record for number of simulated lights on a Christamas tree!
+Faced with an impossible last minute request for millions of Christmas trees with lights, we decided to write a simulation in Apache Kakfa.

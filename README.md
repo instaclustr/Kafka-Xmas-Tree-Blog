@@ -5,4 +5,4 @@ Faced with an impossible last minute request from Santa for millions of Christma
 - See Paul Brebner's blog ["Apache Kafka Christmas Tree Light Simulation – Seasons Greetings From Instaclustr"](https://www.instaclustr.com/seasons-greetings-instaclustr-kafka-christmas-tree-light-simulation/)
 
 ## Instaclustr Open Source Project Status: SAMPLE
-https://www.instaclustr.com/support/documentation/announcements/instaclustr-open-source-project-status/
+- for further information see: https://www.instaclustr.com/support/documentation/announcements/instaclustr-open-source-project-status/
